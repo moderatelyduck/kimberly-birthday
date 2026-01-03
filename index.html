@@ -8,7 +8,10 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--pink:#ff69b4;--light-pink:#ffb6c1;--dark-pink:#ff1493;--soft-pink:#ffd1dc}
-        body{font-family:'Press Start 2P',cursive;background:#1a0a1a;min-height:100vh;overflow:hidden;image-rendering:pixelated}
+        html,body{height:100%;overflow:hidden}
+        body{font-family:'Press Start 2P',cursive;background:#1a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center}
+        
+        /* ============ PASSWORD SCREEN ============ */
         .pw-screen{position:fixed;inset:0;background:linear-gradient(180deg,#ffb6c1,#ffd1dc 50%,#fff);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:1000;gap:20px}
         .pw-screen.hidden{display:none}
         .pw-title{font-size:clamp(12px,3vw,24px);color:var(--dark-pink);text-shadow:3px 3px 0 var(--light-pink);text-align:center;padding:0 20px}
@@ -20,6 +23,8 @@
         .pw-err.show{opacity:1}
         .heart-float{position:absolute;font-size:30px;animation:float 3s ease-in-out infinite}
         @keyframes float{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-15px) rotate(5deg)}}
+        
+        /* ============ INTRO SCREENS ============ */
         .intro{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:900;background:linear-gradient(180deg,#1a1a3e,#2d1f4e 50%,#ff69b4);opacity:0;pointer-events:none;transition:opacity 0.5s;padding:20px}
         .intro.active{opacity:1;pointer-events:auto}
         .intro-text{font-size:clamp(14px,4vw,28px);color:#fff;text-align:center;text-shadow:0 0 20px var(--pink);line-height:2}
@@ -35,243 +40,413 @@
         @keyframes fall{to{transform:translateY(100vh) rotate(720deg)}}
         .ac-chars{position:absolute;bottom:12%;left:50%;transform:translateX(-50%);display:flex;gap:20px}
         .ac-char{width:60px;height:60px;image-rendering:pixelated;object-fit:contain}
-        .game{position:fixed;inset:0;display:none;justify-content:center;align-items:center;background:#2a1a3a}
-        .game.active{display:flex}
-        .room{position:relative;width:100%;max-width:900px;height:100%;max-height:600px;overflow:hidden;border:8px solid #5c3d2e;box-shadow:0 0 0 4px #3d2518;cursor:pointer}
-        .wall{position:absolute;top:0;left:0;width:100%;height:55%;background:linear-gradient(180deg,#ffe8f0,#ffd6e7)}
-        .wall-pattern{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,200,210,0.2) 1px,transparent 1px),linear-gradient(rgba(255,200,210,0.2) 1px,transparent 1px);background-size:40px 40px}
-        .baseboard{position:absolute;top:55%;left:0;width:100%;height:20px;background:linear-gradient(180deg,#d4b896,#8b6914);border-top:3px solid #e8d4b8;z-index:10}
-        .floor{position:absolute;bottom:0;left:0;width:100%;height:45%;background:#d4a056}
-        .floor-pattern{position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(139,105,20,0.1) 0px,rgba(139,105,20,0.1) 2px,transparent 2px,transparent 80px)}
-        .window{position:absolute;top:8%;left:50%;transform:translateX(-50%);width:130px;height:110px;background:linear-gradient(180deg,#87ceeb,#b0e0e6);border:8px solid #5c3d2e;z-index:2;overflow:hidden}
-        .room.night .window{background:linear-gradient(180deg,#0a0a2e,#1a1a4e)}
-        .window-h{position:absolute;top:50%;left:0;width:100%;height:8px;background:#5c3d2e;transform:translateY(-50%)}
-        .window-v{position:absolute;top:0;left:50%;width:8px;height:100%;background:#5c3d2e;transform:translateX(-50%)}
-        .sun{position:absolute;top:15px;right:15px;width:25px;height:25px;background:radial-gradient(circle,#ffff00,#ffa500);border-radius:50%;box-shadow:0 0 15px #ffff00}
-        .moon{position:absolute;top:15px;right:15px;width:20px;height:20px;background:#fffacd;border-radius:50%;display:none}
-        .room.night .sun{display:none}
-        .room.night .moon{display:block}
-        .star{position:absolute;width:3px;height:3px;background:#fff;opacity:0}
-        .room.night .star{opacity:1;animation:twinkle 2s infinite}
-        @keyframes twinkle{0%,100%{opacity:0.3}50%{opacity:1}}
-        .wall-deco{position:absolute;z-index:2}
-        .pic-frame{top:6%;left:5%;width:85px;height:100px;background:linear-gradient(135deg,#a67c52,#8b6914);border:6px solid #5c3d2e;cursor:pointer;box-shadow:3px 3px 0 rgba(0,0,0,0.3)}
-        .pic-frame:hover{transform:scale(1.03)}
-        .pic-inner{position:absolute;inset:6px;background:var(--soft-pink);display:flex;justify-content:center;align-items:center;overflow:hidden}
-        .pic-inner img{width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
-        .wall-heart{top:10%;right:8%;font-size:35px;animation:gentle 4s infinite}
-        @keyframes gentle{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-        .wall-bow{top:25%;left:24%;font-size:24px}
-        .wall-star{top:18%;right:22%;font-size:20px}
         
-        /* ============ FURNITURE - Positioned on floor ============ */
-        /* Floor starts at 55% from top, so furniture bottom should align there */
+        /* ============ MAIN GAME CONTAINER ============ */
+        .game-wrapper{display:none;flex-direction:column;align-items:center;gap:0;width:100%;max-width:900px;height:100vh;max-height:700px;padding:10px}
+        .game-wrapper.active{display:flex}
         
-        /* BED - Left side, sitting on floor */
-        .bed{position:absolute;bottom:0;left:3%;width:180px;height:120px;z-index:5;cursor:pointer}
-        .bed-sprite{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-        
-        /* PORCUPINE - On the bed, positioned relative to bed */
-        .porcupine{position:absolute;bottom:60%;left:55%;width:32px;height:32px;z-index:6;cursor:pointer}
-        .porcupine:hover{transform:scale(1.1)}
-        .porcupine-sprite{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-        .porc-msg{position:absolute;top:-35px;left:50%;transform:translateX(-50%);background:#fff;padding:6px 12px;border-radius:10px;border:2px solid var(--pink);font-size:7px;white-space:nowrap;opacity:0;transition:opacity 0.3s;z-index:100}
-        .porc-msg.show{opacity:1}
-        
-        /* TABLE - Center, sitting on floor */
-        .table{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:160px;height:80px;z-index:5}
-        .table-sprite{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-        
-        /* ITEMS ON TABLE - Positioned on top of table */
-        .items{position:absolute;bottom:55px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:20;align-items:flex-end}
-        .item{width:28px;height:28px;cursor:grab;transition:transform 0.2s;display:flex;align-items:center;justify-content:center}
-        .item:hover{transform:scale(1.15) translateY(-5px)}
-        .item-sprite{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-        
-        /* CLOSET - Right side, sitting on floor */
-        .closet{position:absolute;bottom:0;right:3%;width:100px;height:160px;z-index:5;cursor:pointer}
-        .closet-sprite{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-        
-        /* PLANT - Right side, next to closet */
-        .plant{position:absolute;bottom:0;right:18%;width:50px;height:70px;z-index:6}
-        .plant-sprite{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-        
-        /* CAT BED - Next to plant */
-        .cat-bed{position:absolute;bottom:0;right:25%;width:60px;height:45px;z-index:4}
-        .cat-bed-sprite{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-        
-        /* ============ KIMBERLY - 96x96 ============ */
-        .char{position:absolute;bottom:5%;left:42%;width:96px;height:96px;z-index:50;transition:left 0.5s ease-out}
-        .outfit{display:block;width:100%;height:100%;position:relative}
-        .outfit:not(.active){display:none}
-        .char-sprite{width:100%;height:100%;image-rendering:pixelated;background-repeat:no-repeat;background-position:0 0;position:absolute;top:0;left:0}
-        
-        /* CASUAL OUTFIT */
-        #casual-idle{
-            background-image:url('./images/casual-idle.png');
-            background-size:100% 100%;
+        /* TOP UI BAR */
+        .top-bar{
+            width:100%;
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            padding:8px 15px;
+            background:linear-gradient(180deg,#2d1f3d,#1a0a2a);
+            border:4px solid #5c3d6e;
+            border-bottom:none;
+            border-radius:12px 12px 0 0;
         }
-        #casual-walk{
-            display:none;
-            background-image:url('./images/casual-walk.png');
-            background-size:400% 100%;
-        }
-        #casual-dance{
-            display:none;
-            background-image:url('./images/casual-dance.png');
-            background-size:800% 100%;
-        }
-        #casual-drink{
-            display:none;
-            background-image:url('./images/casual-drink.png');
-            background-size:600% 100%;
-        }
-        
-        /* PAJAMAS OUTFIT */
-        #pj-idle{
-            background-image:url('./images/pj-idle.png');
-            background-size:100% 100%;
-        }
-        #pj-walk{
-            display:none;
-            background-image:url('./images/pj-walk.png');
-            background-size:400% 100%;
-        }
-        #pj-dance{
-            display:none;
-            background-image:url('./images/pj-dance.png');
-            background-size:800% 100%;
-        }
-        #pj-drink{
-            display:none;
-            background-image:url('./images/pj-drink.png');
-            background-size:600% 100%;
-        }
-        #pj-sleep{
-            display:none;
-            background-image:url('./images/pj-sleep.png');
-            background-size:100% 100%;
-        }
-        
-        /* ANIMATIONS */
-        @keyframes walk4{from{background-position:0 0}to{background-position:100% 0}}
-        @keyframes dance8{from{background-position:0 0}to{background-position:100% 0}}
-        @keyframes drink6{from{background-position:0 0}to{background-position:100% 0}}
-        
-        .char.walking [id$="-walk"]{display:block;animation:walk4 0.5s steps(4) infinite}
-        .char.walking [id$="-idle"]{display:none}
-        .char.dancing [id$="-dance"]{display:block;animation:dance8 0.8s steps(8) infinite}
-        .char.dancing [id$="-idle"]{display:none}
-        .char.drinking [id$="-drink"]{display:block;animation:drink6 1.5s steps(6) forwards}
-        .char.drinking [id$="-idle"]{display:none}
-        .char.sleeping [id$="-sleep"]{display:block}
-        .char.sleeping [id$="-idle"]{display:none}
-        .char.walk-left{transform:scaleX(-1)}
-        
-        .activity{position:absolute;top:-25px;left:50%;transform:translateX(-50%);font-size:16px;display:none;z-index:60}
-        .activity.active{display:block;animation:pop 0.3s}
-        @keyframes pop{0%{transform:translateX(-50%) scale(0)}100%{transform:translateX(-50%) scale(1)}}
-        .zzz{position:absolute;top:-15px;right:-8px;font-size:14px;display:none;animation:zzz 2s infinite}
-        .zzz.active{display:block}
-        @keyframes zzz{0%,100%{transform:translateY(0);opacity:0.5}50%{transform:translateY(-8px);opacity:1}}
-        .drool{position:absolute;top:55px;left:60%;width:4px;height:10px;background:linear-gradient(180deg,transparent,#87ceeb);border-radius:0 0 50% 50%;display:none}
-        .drool.active{display:block}
-        
-        /* ============ PEARL - 48x48, in front of cat bed ============ */
-        .pearl{position:absolute;bottom:5%;right:26%;width:48px;height:48px;z-index:45}
-        .pearl-halo{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:20px;height:8px;border:3px solid gold;border-radius:50%;z-index:101;animation:halo 2s infinite;background:transparent}
-        @keyframes halo{0%,100%{box-shadow:0 0 5px gold,0 0 10px rgba(255,215,0,0.5)}50%{box-shadow:0 0 15px gold,0 0 25px rgba(255,215,0,0.7)}}
-        .pearl-tag{position:absolute;top:-24px;left:50%;transform:translateX(-50%);background:#fff;border:2px solid var(--pink);border-radius:4px;padding:2px 6px;font-size:6px;color:var(--dark-pink);z-index:100;white-space:nowrap}
-        .pearl-meow{position:absolute;top:-40px;left:50%;transform:translateX(-50%);background:#fff;border:2px solid var(--pink);border-radius:8px;padding:4px 8px;font-size:8px;opacity:0;transition:opacity 0.3s;z-index:102}
-        .pearl-meow.show{opacity:1}
-        .pearl-sprite{width:100%;height:100%;image-rendering:pixelated;background-repeat:no-repeat;background-position:0 0;position:absolute;top:0;left:0}
-        
-        /* PEARL ANIMATIONS */
-        #pearl-idle{
-            background-image:url('./images/pearl-idle.png');
-            background-size:1000% 100%;
-            animation:pearl10 2s steps(10) infinite;
-        }
-        #pearl-box{
-            display:none;
-            background-image:url('./images/pearl-box.png');
-            background-size:400% 100%;
-        }
-        @keyframes pearl10{from{background-position:0 0}to{background-position:100% 0}}
-        @keyframes pearl4{from{background-position:0 0}to{background-position:100% 0}}
-        .pearl.in-box #pearl-idle{display:none}
-        .pearl.in-box #pearl-box{display:block;animation:pearl4 1s steps(4) infinite}
-        
-        /* ============ UI ============ */
-        .stats{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:6px;z-index:100}
+        .stats{display:flex;flex-direction:column;gap:5px}
         .stat{display:flex;align-items:center;gap:6px}
         .stat-icon{font-size:14px}
-        .stat-bg{width:clamp(70px,18vw,130px);height:14px;background:rgba(0,0,0,0.4);border:3px solid var(--dark-pink)}
-        .stat-fill{height:100%;background:linear-gradient(180deg,var(--light-pink),var(--dark-pink));transition:width 0.5s}
+        .stat-bg{width:100px;height:14px;background:rgba(0,0,0,0.5);border:2px solid var(--dark-pink);border-radius:2px}
+        .stat-fill{height:100%;background:linear-gradient(180deg,var(--light-pink),var(--dark-pink));transition:width 0.5s;border-radius:1px}
         .stat-fill.hunger{background:linear-gradient(180deg,#ffe4b5,#deb887)}
-        .stat-msg{position:absolute;top:55px;left:10px;font-size:7px;color:var(--dark-pink);background:#fff;padding:6px 10px;border:2px solid var(--pink);opacity:0;transition:opacity 0.3s;z-index:100}
+        .stat-msg{font-size:7px;color:var(--light-pink);margin-top:4px;opacity:0;transition:opacity 0.3s}
         .stat-msg.show{opacity:1}
         
-        /* BUTTONS - Neatly spaced */
-        .btns{position:absolute;top:10px;right:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;z-index:100}
-        .btn{font-family:inherit;font-size:clamp(6px,1.3vw,8px);padding:8px 10px;background:linear-gradient(180deg,var(--light-pink),var(--pink));color:#fff;border:3px solid var(--dark-pink);cursor:pointer;box-shadow:2px 2px 0 #8b0040;text-align:center;white-space:nowrap}
-        .btn:hover{transform:translate(1px,1px);box-shadow:1px 1px 0 #8b0040}
+        .btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:280px}
+        .btn{font-family:inherit;font-size:7px;padding:8px 10px;background:linear-gradient(180deg,var(--light-pink),var(--pink));color:#fff;border:2px solid var(--dark-pink);cursor:pointer;border-radius:4px;white-space:nowrap}
+        .btn:hover{background:linear-gradient(180deg,var(--pink),var(--dark-pink))}
         
-        .memory{position:absolute;bottom:10px;left:10px;background:#fff;padding:10px 14px;border:4px solid var(--pink);z-index:100}
-        .mem-title{font-size:clamp(5px,1vw,7px);color:var(--dark-pink);margin-bottom:6px}
-        .mem-date{font-size:clamp(5px,1vw,7px);color:#666;margin-bottom:8px}
-        .mem-days{font-size:clamp(8px,1.8vw,14px);color:var(--dark-pink)}
-        .music{position:absolute;bottom:10px;right:10px;background:#fff;padding:8px 12px;border:4px solid var(--pink);z-index:100}
-        .music-title{font-size:clamp(5px,1vw,7px);color:var(--dark-pink);text-align:center;margin-bottom:6px}
+        /* ============ ROOM - Idle Aura Dollhouse Style ============ */
+        .room{
+            position:relative;
+            width:100%;
+            flex:1;
+            min-height:300px;
+            background:linear-gradient(180deg, #ffe8f0 0%, #ffd6e7 100%);
+            border:4px solid #5c3d6e;
+            border-top:none;
+            border-bottom:none;
+            overflow:hidden;
+            cursor:pointer;
+            image-rendering:pixelated;
+        }
+        
+        /* Wall decoration */
+        .wall-pattern{
+            position:absolute;
+            inset:0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(255,182,193,0.3) 0%, transparent 20%),
+                radial-gradient(circle at 80% 20%, rgba(255,182,193,0.3) 0%, transparent 15%),
+                linear-gradient(90deg, rgba(255,200,210,0.1) 1px, transparent 1px),
+                linear-gradient(rgba(255,200,210,0.1) 1px, transparent 1px);
+            background-size:100% 100%, 100% 100%, 60px 60px, 60px 60px;
+            pointer-events:none;
+        }
+        
+        /* Floor */
+        .floor{
+            position:absolute;
+            bottom:0;
+            left:0;
+            right:0;
+            height:35%;
+            background:linear-gradient(180deg, #c9956c 0%, #b8845b 50%, #a77349 100%);
+            border-top:4px solid #8b6914;
+        }
+        .floor-pattern{
+            position:absolute;
+            inset:0;
+            background:repeating-linear-gradient(
+                90deg,
+                transparent 0px,
+                transparent 78px,
+                rgba(139,105,20,0.15) 78px,
+                rgba(139,105,20,0.15) 80px
+            );
+            pointer-events:none;
+        }
+        
+        /* Window */
+        .window{position:absolute;top:8%;left:50%;transform:translateX(-50%);width:140px;height:110px;background:linear-gradient(180deg,#87ceeb,#b0e0e6);border:8px solid #5c3d2e;z-index:2;box-shadow:inset 0 0 20px rgba(135,206,235,0.5)}
+        .room.night .window{background:linear-gradient(180deg,#0a0a2e,#1a1a4e);box-shadow:inset 0 0 20px rgba(0,0,50,0.5)}
+        .window-cross::before{content:'';position:absolute;top:50%;left:0;right:0;height:6px;background:#5c3d2e;transform:translateY(-50%)}
+        .window-cross::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:6px;background:#5c3d2e;transform:translateX(-50%)}
+        .sun{position:absolute;top:15px;right:18px;width:25px;height:25px;background:radial-gradient(circle,#ffff00,#ffa500);border-radius:50%;box-shadow:0 0 15px #ffff00}
+        .moon{position:absolute;top:15px;right:18px;width:20px;height:20px;background:radial-gradient(circle at 30% 30%,#fffacd,#f0e68c);border-radius:50%;display:none;box-shadow:0 0 10px rgba(255,250,205,0.5)}
+        .room.night .sun{display:none}
+        .room.night .moon{display:block}
+        
+        /* Wall decorations */
+        .pic-frame{position:absolute;top:6%;left:5%;width:75px;height:90px;background:linear-gradient(135deg,#a67c52,#8b6914);border:5px solid #5c3d2e;cursor:pointer;z-index:2;box-shadow:3px 3px 0 rgba(0,0,0,0.2)}
+        .pic-frame:hover{transform:scale(1.05)}
+        .pic-inner{position:absolute;inset:5px;background:var(--soft-pink);overflow:hidden}
+        .pic-inner img{width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+        .wall-heart{position:absolute;top:10%;right:8%;font-size:30px;animation:gentle 4s infinite;z-index:2}
+        @keyframes gentle{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+        .wall-bow{position:absolute;top:22%;left:22%;font-size:22px;z-index:2}
+        .wall-star{position:absolute;top:15%;right:22%;font-size:18px;z-index:2}
+        
+        /* ============ FURNITURE - Against wall, on floor ============ */
+        /* Floor is 35% height, furniture sits at bottom:35% to be ON the floor line */
+        
+        /* BED - Left side, ~2x character width */
+        .bed{
+            position:absolute;
+            left:15px;
+            bottom:28%;
+            width:168px;
+            height:130px;
+            z-index:10;
+            cursor:pointer;
+        }
+        .bed>img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+        
+        /* Porcupine - Center of bed mattress */
+        .porcupine{
+            position:absolute;
+            bottom:45%;
+            left:50%;
+            transform:translateX(-50%);
+            width:35px;
+            height:35px;
+            cursor:pointer;
+            z-index:11;
+        }
+        .porcupine:hover{transform:translateX(-50%) scale(1.15)}
+        .porcupine img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+        .porc-msg{position:absolute;top:-32px;left:50%;transform:translateX(-50%);background:#fff;padding:5px 10px;border-radius:10px;border:2px solid var(--pink);font-size:6px;white-space:nowrap;opacity:0;transition:opacity 0.3s;z-index:100}
+        .porc-msg.show{opacity:1}
+        
+        /* TABLE - Center, waist-height */
+        .table{
+            position:absolute;
+            left:50%;
+            transform:translateX(-50%);
+            bottom:28%;
+            width:180px;
+            height:90px;
+            z-index:10;
+        }
+        .table>img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+        
+        /* Items ON table surface */
+        .items{
+            position:absolute;
+            bottom:65%;
+            left:50%;
+            transform:translateX(-50%);
+            display:flex;
+            gap:8px;
+            z-index:12;
+        }
+        .item{
+            width:28px;
+            height:28px;
+            cursor:grab;
+            transition:transform 0.2s;
+        }
+        .item:hover{transform:scale(1.2) translateY(-4px)}
+        .item img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+        
+        /* CLOSET - Right side, taller than character */
+        .closet{
+            position:absolute;
+            right:15px;
+            bottom:32%;
+            width:75px;
+            height:131px;
+            z-index:10;
+            cursor:pointer;
+        }
+        .closet>img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+        
+        /* PLANT - Next to closet */
+        .plant{
+            position:absolute;
+            right:120px;
+            bottom:32%;
+            width:50px;
+            height:70px;
+            z-index:10;
+        }
+        .plant img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+        
+        /* CAT BED - Next to plant */
+        .cat-bed{
+            position:absolute;
+            right:190px;
+            bottom:30%;
+            width:60px;
+            height:45px;
+            z-index:9;
+        }
+        .cat-bed img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+        
+        /* ============ KIMBERLY - 96x96 on floor ============ */
+        .char{
+            position:absolute;
+            bottom:28%;
+            left:350px;
+            width:130px;
+            height:130px;
+            z-index:50;
+            transition:left 0.8s ease-in-out;
+            image-rendering:pixelated;
+        }
+        
+        .char-sprite{
+            position:absolute;
+            top:0;left:0;
+            width:130px;
+            height:130px;
+            background-repeat:no-repeat;
+            background-position:0 0;
+            image-rendering:pixelated;
+            display:none;
+        }
+        .char-sprite.active{display:block}
+        
+        /* Sprite sheets */
+        #kim-idle{background-image:url('./images/casual-idle.png');background-size:130px 130px}
+        #kim-walk{background-image:url('./images/casual-walk.png');background-size:520px 130px}
+        #kim-dance{background-image:url('./images/casual-dance.png');background-size:1040px 130px}
+        #kim-drink{background-image:url('./images/casual-drink.png');background-size:780px 130px}
+        #kim-idle-pj{background-image:url('./images/pj-idle.png');background-size:130px 130px}
+        #kim-walk-pj{background-image:url('./images/pj-walk.png');background-size:520px 130px}
+        #kim-dance-pj{background-image:url('./images/pj-dance.png');background-size:1040px 130px}
+        #kim-drink-pj{background-image:url('./images/pj-drink.png');background-size:780px 130px}
+        #kim-sleep{background-image:url('./images/pj-sleep.png');background-size:130px 130px}
+        
+        /* Animations */
+        @keyframes walk4{
+            0%{background-position:0 0}
+            25%{background-position:-130px 0}
+            50%{background-position:-260px 0}
+            75%{background-position:-390px 0}
+            100%{background-position:0 0}
+        }
+        @keyframes dance8{
+            0%{background-position:0 0}
+            12.5%{background-position:-130px 0}
+            25%{background-position:-260px 0}
+            37.5%{background-position:-390px 0}
+            50%{background-position:-520px 0}
+            62.5%{background-position:-650px 0}
+            75%{background-position:-780px 0}
+            87.5%{background-position:-910px 0}
+            100%{background-position:0 0}
+        }
+        @keyframes drink6{
+            0%{background-position:0 0}
+            16.66%{background-position:-130px 0}
+            33.33%{background-position:-260px 0}
+            50%{background-position:-390px 0}
+            66.66%{background-position:-520px 0}
+            83.33%,100%{background-position:-650px 0}
+        }
+        
+        .char.walking .char-sprite.active{animation:walk4 0.4s steps(1) infinite}
+        .char.dancing .char-sprite.active{animation:dance8 0.8s steps(1) infinite}
+        .char.drinking .char-sprite.active{animation:drink6 1.5s steps(1) forwards}
+        .char.face-left{transform:scaleX(-1)}
+        
+        /* Effects */
+        .zzz{position:absolute;top:-12px;right:-5px;font-size:14px;display:none;animation:zzz 2s infinite}
+        .zzz.active{display:block}
+        @keyframes zzz{0%,100%{transform:translateY(0);opacity:0.5}50%{transform:translateY(-8px);opacity:1}}
+        .activity{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:16px;display:none}
+        .activity.show{display:block;animation:pop 0.3s}
+        @keyframes pop{0%{transform:translateX(-50%) scale(0)}100%{transform:translateX(-50%) scale(1)}}
+        
+        /* ============ PEARL - 48x48, stationary ============ */
+        .pearl{
+            position:absolute;
+            right:190px;
+            bottom:35%;
+            width:48px;
+            height:48px;
+            z-index:45;
+        }
+        .pearl-halo{
+            position:absolute;
+            top:-10px;
+            left:50%;
+            transform:translateX(-50%);
+            width:22px;
+            height:9px;
+            border:3px solid gold;
+            border-radius:50%;
+            animation:halo 2s infinite;
+            background:transparent;
+        }
+        @keyframes halo{0%,100%{box-shadow:0 0 5px gold}50%{box-shadow:0 0 12px gold,0 0 20px rgba(255,215,0,0.4)}}
+        .pearl-tag{position:absolute;top:-24px;left:50%;transform:translateX(-50%);background:#fff;border:2px solid var(--pink);border-radius:4px;padding:2px 6px;font-size:6px;color:var(--dark-pink);white-space:nowrap}
+        .pearl-meow{position:absolute;top:-42px;left:50%;transform:translateX(-50%);background:#fff;border:2px solid var(--pink);border-radius:8px;padding:4px 8px;font-size:8px;opacity:0;transition:opacity 0.3s;z-index:100}
+        .pearl-meow.show{opacity:1}
+        
+        .pearl-sprite{
+            position:absolute;
+            top:0;left:0;
+            width:48px;
+            height:48px;
+            background-repeat:no-repeat;
+            background-position:0 0;
+            image-rendering:pixelated;
+            display:none;
+        }
+        .pearl-sprite.active{display:block}
+        
+        #pearl-idle{background-image:url('./images/pearl-idle.png');background-size:480px 48px;animation:pearl10 2s steps(1) infinite}
+        #pearl-box{background-image:url('./images/pearl-box.png');background-size:192px 48px;animation:pearl4 1s steps(1) infinite}
+        
+        @keyframes pearl10{
+            0%{background-position:0 0}10%{background-position:-48px 0}20%{background-position:-96px 0}
+            30%{background-position:-144px 0}40%{background-position:-192px 0}50%{background-position:-240px 0}
+            60%{background-position:-288px 0}70%{background-position:-336px 0}80%{background-position:-384px 0}
+            90%{background-position:-432px 0}100%{background-position:0 0}
+        }
+        @keyframes pearl4{
+            0%{background-position:0 0}25%{background-position:-48px 0}
+            50%{background-position:-96px 0}75%{background-position:-144px 0}100%{background-position:0 0}
+        }
+        
+        /* ============ BOTTOM UI BAR ============ */
+        .bottom-bar{
+            width:100%;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:10px 15px;
+            background:linear-gradient(180deg,#2d1f3d,#1a0a2a);
+            border:4px solid #5c3d6e;
+            border-top:none;
+            border-radius:0 0 12px 12px;
+        }
+        
+        .memory{background:rgba(255,255,255,0.95);padding:8px 14px;border-radius:6px;border:3px solid var(--pink)}
+        .mem-title{font-size:6px;color:var(--dark-pink);margin-bottom:3px}
+        .mem-date{font-size:6px;color:#666;margin-bottom:5px}
+        .mem-days{font-size:11px;color:var(--dark-pink)}
+        
+        .music{background:rgba(255,255,255,0.95);padding:8px 12px;border-radius:6px;border:3px solid var(--pink);text-align:center}
+        .music-title{font-size:6px;color:var(--dark-pink);margin-bottom:5px}
         .music-btns{display:flex;gap:4px;justify-content:center}
-        .music-btn{font-family:inherit;font-size:clamp(6px,1.2vw,10px);padding:6px 12px;background:var(--pink);color:#fff;border:2px solid var(--dark-pink);cursor:pointer}
+        .music-btn{font-family:inherit;font-size:10px;padding:5px 12px;background:var(--pink);color:#fff;border:2px solid var(--dark-pink);cursor:pointer;border-radius:4px}
         .music-btn:hover{background:var(--dark-pink)}
-        .now-playing{font-size:clamp(4px,0.8vw,6px);color:#666;text-align:center;margin-top:4px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .now-playing{font-size:6px;color:#666;margin-top:4px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         
         /* ============ MODALS ============ */
-        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;justify-content:center;align-items:center;z-index:500;padding:15px}
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center;z-index:500;padding:20px}
         .modal-bg.active{display:flex}
-        .modal{background:linear-gradient(180deg,#fff5ee,var(--soft-pink));border:6px solid var(--pink);padding:clamp(12px,3vw,25px);max-width:90%;max-height:85vh;overflow-y:auto;position:relative}
-        .modal-x{position:absolute;top:8px;right:8px;font-family:inherit;font-size:10px;background:var(--dark-pink);color:#fff;border:none;width:25px;height:25px;cursor:pointer}
-        .modal-title{font-size:clamp(9px,2vw,14px);color:var(--dark-pink);margin-bottom:15px;text-align:center}
-        .outfits{display:flex;gap:12px;justify-content:center}
-        .outfit-opt{background:#fff;border:4px solid var(--pink);padding:12px;cursor:pointer;min-width:80px;text-align:center}
-        .outfit-opt:hover{transform:scale(1.05)}
+        .modal{background:linear-gradient(180deg,#fff5ee,var(--soft-pink));border:6px solid var(--pink);border-radius:12px;padding:25px;max-width:90%;max-height:85vh;overflow-y:auto;position:relative}
+        .modal-x{position:absolute;top:10px;right:10px;font-family:inherit;font-size:12px;background:var(--dark-pink);color:#fff;border:none;width:28px;height:28px;cursor:pointer;border-radius:50%}
+        .modal-x:hover{background:#c0105c}
+        .modal-title{font-size:14px;color:var(--dark-pink);margin-bottom:15px;text-align:center}
+        .outfits{display:flex;gap:15px;justify-content:center}
+        .outfit-opt{background:#fff;border:4px solid var(--pink);border-radius:8px;padding:15px;cursor:pointer;min-width:90px;text-align:center;transition:all 0.2s}
+        .outfit-opt:hover{transform:scale(1.05);border-color:var(--dark-pink)}
         .outfit-opt.active{background:var(--light-pink);border-color:var(--dark-pink)}
-        .outfit-icon{font-size:28px;margin-bottom:8px}
-        .outfit-name{font-size:clamp(5px,1.2vw,8px);color:var(--dark-pink)}
-        .letter-modal .modal{max-width:650px;background:linear-gradient(180deg,#fff8f0,#ffe4e1);border-color:#d4a574}
+        .outfit-icon{font-size:32px;margin-bottom:8px}
+        .outfit-name{font-size:8px;color:var(--dark-pink)}
+        .letter-modal .modal{max-width:600px;background:linear-gradient(180deg,#fff8f0,#ffe4e1);border-color:#d4a574}
         .letter{font-family:'Cormorant Garamond',serif;color:#4a3728;line-height:2;text-align:justify}
-        .letter-date{font-family:'Pinyon Script',cursive;font-size:clamp(18px,4vw,28px);text-align:right;color:#8b4513;margin-bottom:25px}
-        .letter-greeting{font-family:'Pinyon Script',cursive;font-size:clamp(22px,5vw,36px);color:var(--dark-pink);margin-bottom:20px}
-        .letter-body{font-size:clamp(13px,2.5vw,17px);margin-bottom:12px}
-        .letter-closing{font-family:'Pinyon Script',cursive;font-size:clamp(18px,4vw,28px);text-align:right;color:#8b4513;margin-top:25px}
-        .letter-sig{font-family:'Pinyon Script',cursive;font-size:clamp(22px,5vw,32px);text-align:right;color:var(--dark-pink)}
+        .letter-date{font-family:'Pinyon Script',cursive;font-size:26px;text-align:right;color:#8b4513;margin-bottom:20px}
+        .letter-greeting{font-family:'Pinyon Script',cursive;font-size:34px;color:var(--dark-pink);margin-bottom:18px}
+        .letter-body{font-size:16px;margin-bottom:12px}
+        .letter-closing{font-family:'Pinyon Script',cursive;font-size:26px;text-align:right;color:#8b4513;margin-top:22px}
+        .letter-sig{font-family:'Pinyon Script',cursive;font-size:30px;text-align:right;color:var(--dark-pink)}
         .notes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
-        .note-card{background:linear-gradient(135deg,#ffd700,#ffec8b);border:3px solid #daa520;padding:12px;cursor:pointer;text-align:center}
+        .note-card{background:linear-gradient(135deg,#ffd700,#ffec8b);border:3px solid #daa520;border-radius:8px;padding:12px;cursor:pointer;text-align:center;transition:transform 0.2s}
         .note-card:hover{transform:scale(1.03)}
-        .note-card.read{opacity:0.6}
-        .note-text{font-size:clamp(7px,1.5vw,10px);color:#4a3728;font-style:italic;margin-bottom:8px;line-height:1.5}
-        .note-src{font-size:clamp(5px,1vw,8px);color:#8b4513}
-        .zodiac-sec{background:#fff;border:3px solid var(--pink);padding:12px;margin-bottom:12px;text-align:center}
-        .zodiac-icon{font-size:clamp(18px,4vw,26px)}
-        .zodiac-name{font-size:clamp(9px,2vw,13px);color:var(--dark-pink);margin:6px 0}
-        .zodiac-desc{font-size:clamp(6px,1.3vw,9px);color:#666;line-height:1.5}
-        .fortune{background:linear-gradient(135deg,#ffd700,#fff8dc);border:3px solid #daa520;padding:15px;text-align:center}
-        .fortune-title{font-size:clamp(8px,1.8vw,12px);color:#8b4513;margin-bottom:10px}
-        .fortune-text{font-size:clamp(6px,1.3vw,9px);color:#4a3728;line-height:1.6;white-space:pre-line}
-        .photo-frame-lg{background:linear-gradient(135deg,#8b4513,#654321);padding:15px;display:inline-block}
-        .photo-inner-lg{background:var(--light-pink);padding:10px;min-height:250px;display:flex;justify-content:center;align-items:center}
-        .photo-inner-lg img{max-width:100%;max-height:350px;image-rendering:pixelated}
+        .note-card.read{opacity:0.5}
+        .note-text{font-size:9px;color:#4a3728;font-style:italic;margin-bottom:8px;line-height:1.5}
+        .note-src{font-size:7px;color:#8b4513}
+        .zodiac-sec{background:#fff;border:3px solid var(--pink);border-radius:8px;padding:14px;margin-bottom:12px;text-align:center}
+        .zodiac-icon{font-size:28px}
+        .zodiac-name{font-size:13px;color:var(--dark-pink);margin:6px 0}
+        .zodiac-desc{font-size:9px;color:#666;line-height:1.5}
+        .fortune{background:linear-gradient(135deg,#ffd700,#fff8dc);border:3px solid #daa520;border-radius:8px;padding:15px;text-align:center}
+        .fortune-title{font-size:11px;color:#8b4513;margin-bottom:10px}
+        .fortune-text{font-size:9px;color:#4a3728;line-height:1.6;white-space:pre-line}
+        .photo-frame-lg{background:linear-gradient(135deg,#8b4513,#654321);padding:15px;border-radius:8px;display:inline-block}
+        .photo-inner-lg{background:var(--light-pink);padding:10px;border-radius:4px;min-height:220px;display:flex;justify-content:center;align-items:center}
+        .photo-inner-lg img{max-width:100%;max-height:320px;image-rendering:pixelated;border-radius:4px}
+        
+        /* Effects */
         .heart-fx{position:absolute;font-size:18px;animation:heart-rise 1.5s forwards;pointer-events:none;z-index:200}
-        @keyframes heart-rise{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(1.4)}}
+        @keyframes heart-rise{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-70px) scale(1.4)}}
         .firework{position:absolute;width:8px;height:8px;border-radius:50%;animation:fw-pop 1s forwards;z-index:200}
         @keyframes fw-pop{0%{transform:scale(0);opacity:1}50%{transform:scale(2)}100%{transform:scale(2.5);opacity:0}}
-        #yt-player{position:absolute;top:-9999px}
-        @media(max-width:600px){.btns{grid-template-columns:1fr}.music{bottom:auto;top:50%;right:5px}}
+        
+        #yt-player{position:absolute;top:-9999px;left:-9999px}
+        
+        /* Responsive */
+        @media(max-width:920px){
+            .game-wrapper{max-height:none;height:auto;padding:5px}
+            .room{min-height:350px;height:50vh}
+            .top-bar,.bottom-bar{padding:6px 10px}
+            .btns{max-width:200px}
+            .btn{font-size:6px;padding:6px 8px}
+        }
     </style>
 </head>
 <body>
+    <!-- PASSWORD -->
     <div class="pw-screen" id="pwScreen">
         <div class="heart-float" style="top:10%;left:10%">💕</div>
         <div class="heart-float" style="top:15%;right:15%;animation-delay:0.5s">💖</div>
@@ -284,6 +459,7 @@
         <p class="pw-err" id="pwErr">Hmm, that's not it! Try again 💕</p>
     </div>
     
+    <!-- INTRO -->
     <div class="intro" id="intro1"><p class="intro-text">Happy Birthday my beautiful girl</p></div>
     <div class="intro" id="intro2"><p class="intro-text">I wish you were here for your 26th birthday<br><br>but since you're not here<br><br>I thought I'd make you something fun</p><div class="intro-arrow">▼</div><p class="intro-click">CLICK TO CONTINUE</p></div>
     <div class="intro confetti-screen" id="intro3">
@@ -296,93 +472,15 @@
         </div>
     </div>
     
-    <div class="game" id="game">
-        <div class="room" id="room">
-            <div class="wall"><div class="wall-pattern"></div></div>
-            <div class="baseboard"></div>
-            <div class="floor" id="floor"><div class="floor-pattern"></div></div>
-            <div class="window" id="window">
-                <div class="sun"></div><div class="moon"></div>
-                <div class="star" style="top:15%;left:15%"></div>
-                <div class="star" style="top:30%;left:50%;animation-delay:0.5s"></div>
-                <div class="star" style="top:20%;left:75%;animation-delay:1s"></div>
-                <div class="window-h"></div><div class="window-v"></div>
-            </div>
-            
-            <div class="wall-deco pic-frame" onclick="openModal('photoModal')">
-                <div class="pic-inner"><img src="./images/photo.png" alt=""></div>
-            </div>
-            <div class="wall-deco wall-heart">💕</div>
-            <div class="wall-deco wall-bow">🎀</div>
-            <div class="wall-deco wall-star">⭐</div>
-            
-            <!-- BED with porcupine -->
-            <div class="bed" onclick="toggleSleep()">
-                <img class="bed-sprite" src="./images/bed.png" alt="">
-                <div class="porcupine" onclick="event.stopPropagation();pokePorcupine()">
-                    <img class="porcupine-sprite" src="./images/porcupine.png" alt="">
-                    <div class="porc-msg" id="porcMsg">me love you baobei 💕</div>
-                </div>
-            </div>
-            
-            <!-- TABLE with items -->
-            <div class="table">
-                <img class="table-sprite" src="./images/table.png" alt="">
-                <div class="items" id="items">
-                    <div class="item" id="item-bouquet" draggable="true"><img class="item-sprite" src="./images/bouquet.png" alt=""></div>
-                    <div class="item" id="item-cheesecake" draggable="true"><img class="item-sprite" src="./images/cheesecake.png" alt=""></div>
-                    <div class="item" id="item-dvd" draggable="true"><img class="item-sprite" src="./images/dvd.png" alt=""></div>
-                    <div class="item" id="item-game" draggable="true"><img class="item-sprite" src="./images/game.png" alt=""></div>
-                    <div class="item" id="item-yarn" draggable="true"><img class="item-sprite" src="./images/yarn.png" alt=""></div>
-                </div>
-            </div>
-            
-            <!-- CLOSET -->
-            <div class="closet" onclick="openModal('closetModal')">
-                <img class="closet-sprite" src="./images/closet.png" alt="">
-            </div>
-            
-            <!-- PLANT -->
-            <div class="plant"><img class="plant-sprite" src="./images/plant.png" alt=""></div>
-            
-            <!-- CAT BED - next to plant -->
-            <div class="cat-bed"><img class="cat-bed-sprite" src="./images/cat-bed.png" alt=""></div>
-            
-            <!-- KIMBERLY -->
-            <div class="char" id="char">
-                <div class="outfit active" id="casual-outfit">
-                    <div class="char-sprite" id="casual-idle"></div>
-                    <div class="char-sprite" id="casual-walk"></div>
-                    <div class="char-sprite" id="casual-dance"></div>
-                    <div class="char-sprite" id="casual-drink"></div>
-                </div>
-                <div class="outfit" id="pj-outfit">
-                    <div class="char-sprite" id="pj-idle"></div>
-                    <div class="char-sprite" id="pj-walk"></div>
-                    <div class="char-sprite" id="pj-dance"></div>
-                    <div class="char-sprite" id="pj-drink"></div>
-                    <div class="char-sprite" id="pj-sleep"></div>
-                </div>
-                <div class="activity" id="activity"></div>
-                <div class="zzz" id="zzz">💤</div>
-                <div class="drool" id="drool"></div>
-            </div>
-            
-            <!-- PEARL - in front of cat bed -->
-            <div class="pearl" id="pearl">
-                <div class="pearl-halo"></div>
-                <div class="pearl-tag">PEARL</div>
-                <div class="pearl-meow" id="pearlMeow">meow~ 🐱</div>
-                <div class="pearl-sprite" id="pearl-idle"></div>
-                <div class="pearl-sprite" id="pearl-box"></div>
-            </div>
-            
-            <!-- UI -->
+    <!-- GAME -->
+    <div class="game-wrapper" id="gameWrapper">
+        <!-- TOP BAR -->
+        <div class="top-bar">
             <div class="stats">
                 <div class="stat"><span class="stat-icon">💖</span><div class="stat-bg"><div class="stat-fill" id="happyBar" style="width:50%"></div></div></div>
                 <div class="stat"><span class="stat-icon">🍰</span><div class="stat-bg"><div class="stat-fill hunger" id="hungerBar" style="width:50%"></div></div></div>
+                <div class="stat-msg" id="statMsg">Kimberly is the happiest girl! 💕</div>
             </div>
-            <div class="stat-msg" id="statMsg"></div>
             <div class="btns">
                 <button class="btn" onclick="openModal('letterModal')">💌 LETTER</button>
                 <button class="btn" onclick="openModal('notesModal')">📝 NOTES</button>
@@ -390,6 +488,79 @@
                 <button class="btn" onclick="showLucky()">🎲 LUCKY#</button>
                 <button class="btn" id="replayBtn" style="display:none" onclick="replayIntro()">🎉 REPLAY</button>
             </div>
+        </div>
+        
+        <!-- ROOM -->
+        <div class="room" id="room">
+            <div class="wall-pattern"></div>
+            <div class="floor"><div class="floor-pattern"></div></div>
+            
+            <div class="window">
+                <div class="sun"></div>
+                <div class="moon"></div>
+                <div class="window-cross"></div>
+            </div>
+            
+            <div class="pic-frame" onclick="openModal('photoModal')">
+                <div class="pic-inner"><img src="./images/photo.png" alt=""></div>
+            </div>
+            <div class="wall-heart">💕</div>
+            <div class="wall-bow">🎀</div>
+            <div class="wall-star">⭐</div>
+            
+            <!-- BED -->
+            <div class="bed">
+                <img src="./images/bed.png" alt="">
+                <div class="porcupine" onclick="event.stopPropagation();pokePorcupine()">
+                    <img src="./images/porcupine.png" alt="">
+                    <div class="porc-msg" id="porcMsg">me love you baobei 💕</div>
+                </div>
+            </div>
+            
+            <!-- TABLE -->
+            <div class="table">
+                <img src="./images/table.png" alt="">
+                <div class="items" id="items">
+                    <div class="item" id="item-bouquet" draggable="true"><img src="./images/bouquet.png" alt=""></div>
+                    <div class="item" id="item-cheesecake" draggable="true"><img src="./images/cheesecake.png" alt=""></div>
+                    <div class="item" id="item-dvd" draggable="true"><img src="./images/dvd.png" alt=""></div>
+                    <div class="item" id="item-game" draggable="true"><img src="./images/game.png" alt=""></div>
+                    <div class="item" id="item-yarn" draggable="true"><img src="./images/yarn.png" alt=""></div>
+                </div>
+            </div>
+            
+            <!-- RIGHT SIDE -->
+            <div class="closet" onclick="openModal('closetModal')"><img src="./images/closet.png" alt=""></div>
+            <div class="plant"><img src="./images/plant.png" alt=""></div>
+            <div class="cat-bed"><img src="./images/cat-bed.png" alt=""></div>
+            
+            <!-- PEARL -->
+            <div class="pearl" id="pearl" onclick="clickPearl()">
+                <div class="pearl-halo"></div>
+                <div class="pearl-tag">PEARL</div>
+                <div class="pearl-meow" id="pearlMeow">meow~ 🐱</div>
+                <div class="pearl-sprite active" id="pearl-idle"></div>
+                <div class="pearl-sprite" id="pearl-box"></div>
+            </div>
+            
+            <!-- KIMBERLY -->
+            <div class="char" id="char">
+                <div class="char-sprite active" id="kim-idle"></div>
+                <div class="char-sprite" id="kim-walk"></div>
+                <div class="char-sprite" id="kim-dance"></div>
+                <div class="char-sprite" id="kim-drink"></div>
+                <div class="char-sprite" id="kim-idle-pj"></div>
+                <div class="char-sprite" id="kim-walk-pj"></div>
+                <div class="char-sprite" id="kim-dance-pj"></div>
+                <div class="char-sprite" id="kim-drink-pj"></div>
+                <div class="char-sprite" id="kim-sleep"></div>
+                <div class="activity" id="activity"></div>
+                <div class="zzz" id="zzz">💤</div>
+            </div>
+        </div>
+        
+        <!-- BOTTOM BAR -->
+        <div class="bottom-bar">
             <div class="memory">
                 <div class="mem-title">TOGETHER SINCE</div>
                 <div class="mem-date">SEPT 18, 2014</div>
@@ -398,8 +569,8 @@
             <div class="music">
                 <div class="music-title">🎵 MUSIC 🎵</div>
                 <div class="music-btns">
-                    <button class="music-btn" onclick="playRandom()">▶ PLAY</button>
-                    <button class="music-btn" onclick="stopMusic()">⬛ STOP</button>
+                    <button class="music-btn" onclick="playRandom()">▶</button>
+                    <button class="music-btn" onclick="stopMusic()">⏹</button>
                 </div>
                 <div class="now-playing" id="nowPlaying"></div>
             </div>
@@ -412,33 +583,80 @@
     <div class="modal-bg" id="notesModal"><div class="modal"><button class="modal-x" onclick="closeModal('notesModal')">×</button><h2 class="modal-title">💕 NOTES 💕</h2><div class="notes-grid" id="notesGrid"></div></div></div>
     <div class="modal-bg" id="zodiacModal"><div class="modal"><button class="modal-x" onclick="closeModal('zodiacModal')">×</button><h2 class="modal-title">✨ ZODIAC ✨</h2><div class="zodiac-sec"><div class="zodiac-icon">♑</div><div class="zodiac-name">CAPRICORN</div><div class="zodiac-desc">Born January 3rd • Ambitious • Natural leader</div></div><div class="zodiac-sec"><div class="zodiac-icon">🐉</div><div class="zodiac-name">DRAGON (2000)</div><div class="zodiac-desc">Confident • Magnetic • Boundless energy</div></div><div class="fortune"><div class="fortune-title" id="fortuneTitle"></div><div class="fortune-text" id="fortuneText"></div></div></div></div>
     <div class="modal-bg" id="photoModal"><div class="modal"><button class="modal-x" onclick="closeModal('photoModal')">×</button><h2 class="modal-title">📷 MEMORIES 📷</h2><div class="photo-frame-lg"><div class="photo-inner-lg"><img src="./images/photo.png" alt=""></div></div></div></div>
+    <audio id="meowSound" src="./audio/meow.mp3" preload="auto"></audio>
+    <audio id="meowSound" src="./audio/meow.mp3" preload="auto"></audio>
+<audio id="confettiSound" src="./audio/confetti.mp3" preload="auto"></audio>
+<audio id="fireworkSound" src="./audio/firework.mp3" preload="auto"></audio>
+<audio id="giftSound" src="./audio/gift.mp3" preload="auto"></audio>
+
+
 
     <div id="yt-player"></div>
 
     <script>
+    /* ============================================================
+       YOUTUBE PLAYLIST
+       
+       To add songs:
+       1. Go to YouTube
+       2. Find your song
+       3. Copy the video ID from the URL (after "v=")
+          Example: youtube.com/watch?v=dQw4w9WgXcQ → ID is "dQw4w9WgXcQ"
+       4. Add it below like: {id:'VIDEO_ID', name:'Song Name'},
+    ============================================================ */
     const playlist = [
-        {id:'dQw4w9WgXcQ', name:'Never Gonna Give You Up'},
-        // ADD MORE: {id:'VIDEO_ID', name:'Song Name'},
+        {id:'xybLsPwa-HU', name:'KK Cruisin'},
+        // ADD YOUR SONGS HERE:
+         {id:'mIS6qIVOWxI', name:'KK Bubblegum'},
+         {id:'1wOAhRAqb40', name:'AC randoms w/ rain'},
     ];
 
-    let S={happiness:50,hunger:50,outfit:'casual',sleeping:false,dancing:false,drinking:false,walking:false,readNotes:[],lucky:null,luckyDate:null};
+    // ============ STATE ============
+    let S = {
+        happiness: 50,
+        hunger: 50,
+        outfit: 'casual',
+        sleeping: false,
+        dancing: false,
+        drinking: false,
+        walking: false,
+        readNotes: [],
+        lucky: null,
+        luckyDate: null
+    };
     
-    const loveNotes=[
-        {text:"You are my life now.",source:"Twilight"},
-        {text:"And so the lion fell in love with the lamb.",source:"Twilight"},
-        {text:"I love you more than everything else in the world combined.",source:"Twilight"},
-        {text:"You're my lobster.",source:"Friends"},
-        {text:"It's always been you.",source:"Friends"},
-        {text:"I am hopelessly, irretrievably in love with you.",source:"The Office"},
-        {text:"Whatever our souls are made of, his and mine are the same.",source:"Wuthering Heights"}
+    const loveNotes = [
+        {text:"You are my life now.", source:"Twilight"},
+        {text:"And so the lion fell in love with the lamb.", source:"Twilight"},
+        {text:"I love you more than everything else in the world combined.", source:"Twilight"},
+        {text:"You're my lobster.", source:"Friends"},
+        {text:"It's always been you.", source:"Friends"},
+        {text:"I am hopelessly, irretrievably in love with you.", source:"The Office"},
+        {text:"Whatever our souls are made of, his and mine are the same.", source:"Wuthering Heights"}
     ];
     
-    const dragonFortune={rat:{e:'🐀',n:'Rat',f:"LUCK: ⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐ | CAREER: ⭐⭐⭐⭐\n\nExcellent year! Charisma attracts allies."},ox:{e:'🐂',n:'Ox',f:"LUCK: ⭐⭐⭐ | LOVE: ⭐⭐⭐ | CAREER: ⭐⭐⭐⭐\n\nPatience rewarded."},tiger:{e:'🐅',n:'Tiger',f:"LUCK: ⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐ | CAREER: ⭐⭐⭐⭐⭐\n\nPowerful! Bold moves."},rabbit:{e:'🐰',n:'Rabbit',f:"LUCK: ⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐ | CAREER: ⭐⭐⭐\n\nLove flourishes."},dragon:{e:'🐉',n:'Dragon',f:"LUCK: ⭐⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐ | CAREER: ⭐⭐⭐⭐⭐\n\n✨ YOUR POWER YEAR! ✨"},snake:{e:'🐍',n:'Snake',f:"LUCK: ⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐ | CAREER: ⭐⭐⭐⭐\n\nWisdom enhanced."},horse:{e:'🐴',n:'Horse',f:"LUCK: ⭐⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐ | CAREER: ⭐⭐⭐⭐\n\nFreedom and adventure!"},goat:{e:'🐐',n:'Goat',f:"LUCK: ⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐ | CAREER: ⭐⭐⭐\n\nCreativity flourishes."},monkey:{e:'🐵',n:'Monkey',f:"LUCK: ⭐⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐ | CAREER: ⭐⭐⭐⭐⭐\n\nClever solutions!"},rooster:{e:'🐓',n:'Rooster',f:"LUCK: ⭐⭐⭐ | LOVE: ⭐⭐⭐ | CAREER: ⭐⭐⭐⭐⭐\n\nPrecision pays off."},dog:{e:'🐕',n:'Dog',f:"LUCK: ⭐⭐ | LOVE: ⭐⭐⭐ | CAREER: ⭐⭐⭐\n\nFocus on relationships."},pig:{e:'🐷',n:'Pig',f:"LUCK: ⭐⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐ | CAREER: ⭐⭐⭐⭐\n\nAbundance! 🎊"}};
+    const dragonFortune = {
+        rat:{e:'🐀',n:'Rat',f:"LUCK: ⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐\n\nExcellent year!"},
+        ox:{e:'🐂',n:'Ox',f:"LUCK: ⭐⭐⭐ | LOVE: ⭐⭐⭐\n\nPatience rewarded."},
+        tiger:{e:'🐅',n:'Tiger',f:"LUCK: ⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐\n\nPowerful!"},
+        rabbit:{e:'🐰',n:'Rabbit',f:"LUCK: ⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐\n\nLove flourishes."},
+        dragon:{e:'🐉',n:'Dragon',f:"LUCK: ⭐⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐\n\n✨ YOUR POWER YEAR! ✨"},
+        snake:{e:'🐍',n:'Snake',f:"LUCK: ⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐\n\nWisdom enhanced."},
+        horse:{e:'🐴',n:'Horse',f:"LUCK: ⭐⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐\n\nFreedom!"},
+        goat:{e:'🐐',n:'Goat',f:"LUCK: ⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐\n\nCreativity!"},
+        monkey:{e:'🐵',n:'Monkey',f:"LUCK: ⭐⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐\n\nClever solutions!"},
+        rooster:{e:'🐓',n:'Rooster',f:"LUCK: ⭐⭐⭐ | LOVE: ⭐⭐⭐\n\nPrecision pays."},
+        dog:{e:'🐕',n:'Dog',f:"LUCK: ⭐⭐ | LOVE: ⭐⭐⭐\n\nFocus on love."},
+        pig:{e:'🐷',n:'Pig',f:"LUCK: ⭐⭐⭐⭐⭐ | LOVE: ⭐⭐⭐⭐⭐\n\nAbundance! 🎊"}
+    };
     
-    function getZodiac(y){const a=['monkey','rooster','dog','pig','rat','ox','tiger','rabbit','dragon','snake','horse','goat'];return a[y%12];}
+    function getZodiac(y) {
+        const a = ['monkey','rooster','dog','pig','rat','ox','tiger','rabbit','dragon','snake','horse','goat'];
+        return a[y % 12];
+    }
     
     // ============ INIT ============
-    document.addEventListener('DOMContentLoaded',()=>{
+    document.addEventListener('DOMContentLoaded', () => {
         loadS();
         setupDrag();
         setupClickToMove();
@@ -446,230 +664,531 @@
         updateDayNight();
         updateZodiac();
         populateNotes();
+        showSprite('idle');
         
-        // Make sure character shows on load
-        document.getElementById('casual-outfit').classList.add('active');
+        setInterval(updateDayNight, 60000);
+        setInterval(checkTime, 60000);
+        setInterval(pearlAI, 12000);
+        setInterval(pearlMeow, 18000);
+        setInterval(kimIdle, 15000);
+        setInterval(autoWalk, 10000); // Auto walk every 10 seconds
         
-        setInterval(updateDayNight,60000);
-        setInterval(checkTime,60000);
-        setInterval(pearlAI,8000);
-        setInterval(kimIdle,10000);
-        setInterval(pearlMeow,12000);
-        
-        if(sessionStorage.getItem('auth')){
+        if (sessionStorage.getItem('auth')) {
             document.getElementById('pwScreen').classList.add('hidden');
             checkBday();
         }
     });
     
+    // ============ SPRITE CONTROL ============
+    function showSprite(action) {
+        document.querySelectorAll('.char-sprite').forEach(s => s.classList.remove('active'));
+        
+        let id;
+        const pj = S.outfit === 'pj';
+        
+        switch(action) {
+            case 'walk': id = pj ? 'kim-walk-pj' : 'kim-walk'; break;
+            case 'dance': id = pj ? 'kim-dance-pj' : 'kim-dance'; break;
+            case 'drink': id = pj ? 'kim-drink-pj' : 'kim-drink'; break;
+            case 'sleep': id = 'kim-sleep'; break;
+            default: id = pj ? 'kim-idle-pj' : 'kim-idle';
+        }
+        
+        document.getElementById(id).classList.add('active');
+    }
+    
     // ============ CLICK TO MOVE ============
-    function setupClickToMove(){
+    function setupClickToMove() {
         const room = document.getElementById('room');
-        room.addEventListener('click', function(e){
-            // Don't move if clicking on furniture, buttons, etc
-            if(e.target.closest('.bed, .table, .closet, .btns, .stats, .memory, .music, .item, .porcupine, .pic-frame')) return;
-            if(S.sleeping || S.dancing || S.drinking) return;
+        
+        room.addEventListener('click', function(e) {
+            // Ignore clicks on interactive elements
+            if (S.sleeping) { toggleSleep(); return; }
+            if (e.target.closest('.bed')) { toggleSleep(); return; }
+            if (S.dancing || S.drinking || S.walking) return;
+           
             
             const rect = room.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
-            const roomWidth = rect.width;
             
-            // Convert to percentage (limit to 10% - 80% to keep on screen)
-            let targetPercent = (clickX / roomWidth) * 100;
-            targetPercent = Math.max(10, Math.min(80, targetPercent));
+            // Calculate target position (keep character within bounds)
+            const minX = 210; // After bed
+            const maxX = rect.width - 260; // Before closet area
+            const targetX = Math.max(minX, Math.min(maxX, clickX - 48));
             
-            moveCharTo(targetPercent);
+            walkTo(targetX);
         });
+
+        room.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    const rect = room.getBoundingClientRect();
+    const clickX = touch.clientX - rect.left;
+    
+    if (S.sleeping) { toggleSleep(); return; }
+    if (S.dancing || S.drinking || S.walking) return;
+    
+    const minX = 210;
+    const maxX = rect.width - 260;
+    const targetX = Math.max(minX, Math.min(maxX, clickX - 48));
+    
+    walkTo(targetX);
+});
     }
     
-    function moveCharTo(targetPercent){
+    function walkTo(targetX) {
         const c = document.getElementById('char');
-        const currentLeft = parseFloat(c.style.left) || 42;
+        const currentX = c.offsetLeft;
         
-        // Determine direction for flip
-        if(targetPercent < currentLeft) c.classList.add('walk-left');
-        else c.classList.remove('walk-left');
+        if (Math.abs(targetX - currentX) < 20) return; // Too close, don't bother
         
-        c.classList.add('walking');
+        // Face direction
+        if (targetX < currentX) {
+            c.classList.add('face-left');
+        } else {
+            c.classList.remove('face-left');
+        }
+        
+        // Start walking
         S.walking = true;
-        c.style.left = targetPercent + '%';
+        c.classList.add('walking');
+        showSprite('walk');
         
-        // Calculate walk time based on distance
-        const distance = Math.abs(targetPercent - currentLeft);
-        const walkTime = Math.max(300, distance * 15);
+        // Move character
+        c.style.left = targetX + 'px';
         
-        setTimeout(()=>{
-            c.classList.remove('walking', 'walk-left');
+        // Calculate duration based on distance
+        const distance = Math.abs(targetX - currentX);
+        const duration = Math.max(400, Math.min(1500, distance * 3));
+        
+        // Update transition duration
+        c.style.transitionDuration = duration + 'ms';
+        
+        // Stop walking when done
+        setTimeout(() => {
             S.walking = false;
-        }, walkTime);
+            c.classList.remove('walking', 'face-left');
+            c.style.transitionDuration = '0.8s';
+            showSprite('idle');
+        }, duration);
+    }
+    
+    // ============ AUTO WALK ============
+    function autoWalk() {
+        if (S.sleeping || S.dancing || S.drinking || S.walking) return;
+        
+        const room = document.getElementById('room');
+        const rect = room.getBoundingClientRect();
+        const minX = 210;
+        const maxX = rect.width - 260;
+        const targetX = minX + Math.random() * (maxX - minX);
+        
+        walkTo(targetX);
     }
     
     // ============ PASSWORD ============
-    function checkPw(){
-        const p=document.getElementById('pwInput').value.toUpperCase();
-        if(p==='ILOVEYOU'||p==='ADMIN'){
-            sessionStorage.setItem('auth','true');
+    function checkPw() {
+        const p = document.getElementById('pwInput').value.toUpperCase();
+        if (p === 'ILOVEYOU' || p === 'ADMIN') {
+            sessionStorage.setItem('auth', 'true');
             document.getElementById('pwScreen').classList.add('hidden');
             checkBday();
-        }else{
+        } else {
             document.getElementById('pwErr').classList.add('show');
-            document.getElementById('pwInput').value='';
-            setTimeout(()=>document.getElementById('pwErr').classList.remove('show'),3000);
+            document.getElementById('pwInput').value = '';
+            setTimeout(() => document.getElementById('pwErr').classList.remove('show'), 3000);
         }
     }
-    document.getElementById('pwInput').addEventListener('keypress',e=>{if(e.key==='Enter')checkPw();});
+    document.getElementById('pwInput').addEventListener('keypress', e => { if (e.key === 'Enter') checkPw(); });
     
     // ============ INTRO ============
-    function checkBday(){
-        const d=new Date(),isBday=d.getMonth()===0&&d.getDate()===3,played=localStorage.getItem('introDate');
-        if(isBday&&played!==d.toDateString())playIntro();
-        else{showGame();if(played===d.toDateString())document.getElementById('replayBtn').style.display='block';}
+    function checkBday() {
+        const d = new Date();
+        const isBday = d.getMonth() === 0 && d.getDate() === 3;
+        const played = localStorage.getItem('introDate');
+        
+        if (isBday && played !== d.toDateString()) {
+            playIntro();
+        } else {
+            showGame();
+            if (played === d.toDateString()) {
+                document.getElementById('replayBtn').style.display = 'block';
+            }
+        }
     }
-    function playIntro(){
+    
+    function playIntro() {
         document.getElementById('intro1').classList.add('active');
-        setTimeout(()=>{document.getElementById('intro1').classList.remove('active');document.getElementById('intro2').classList.add('active');},5000);
-        document.getElementById('intro2').onclick=()=>{document.getElementById('intro2').classList.remove('active');showConfetti();};
+        setTimeout(() => {
+            document.getElementById('intro1').classList.remove('active');
+            document.getElementById('intro2').classList.add('active');
+        }, 5000);
+        document.getElementById('intro2').onclick = () => {
+            document.getElementById('intro2').classList.remove('active');
+            showConfetti();
+        };
     }
-    function showConfetti(){
-        const i3=document.getElementById('intro3');i3.classList.add('active');
-        const box=document.getElementById('confettiBox'),colors=['#ff69b4','#ffd700','#87ceeb','#98fb98','#dda0dd'];
-        for(let i=0;i<70;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'%';c.style.background=colors[Math.floor(Math.random()*colors.length)];c.style.animationDuration=(Math.random()*2+2)+'s';c.style.animationDelay=Math.random()*2+'s';box.appendChild(c);}
-        setTimeout(()=>{i3.classList.remove('active');localStorage.setItem('introDate',new Date().toDateString());document.getElementById('replayBtn').style.display='block';showGame();},4500);
+    
+    function showConfetti() {
+        const i3 = document.getElementById('intro3');
+        i3.classList.add('active');
+        document.getElementById('confettiSound').play();
+        const box = document.getElementById('confettiBox');
+        const colors = ['#ff69b4', '#ffd700', '#87ceeb', '#98fb98', '#dda0dd', '#ff6b6b'];
+        for (let i = 0; i < 80; i++) {
+            const c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.left = Math.random() * 100 + '%';
+            c.style.background = colors[Math.floor(Math.random() * colors.length)];
+            c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            c.style.animationDelay = Math.random() * 2 + 's';
+            box.appendChild(c);
+        }
+        setTimeout(() => {
+            i3.classList.remove('active');
+            localStorage.setItem('introDate', new Date().toDateString());
+            document.getElementById('replayBtn').style.display = 'block';
+            showGame();
+        }, 4500);
     }
-    function replayIntro(){document.getElementById('game').classList.remove('active');playIntro();}
-    function showGame(){document.getElementById('game').classList.add('active');}
+    
+    function replayIntro() {
+        document.getElementById('gameWrapper').classList.remove('active');
+        playIntro();
+    }
+    
+    function showGame() {
+        document.getElementById('gameWrapper').classList.add('active');
+        // Auto-play music when game starts
+        setTimeout(autoPlayMusic, 1500);
+    }
     
     // ============ DAY/NIGHT ============
-    function updateDayNight(){const h=new Date().getHours();document.getElementById('room').classList.toggle('night',h<6||h>=18);}
+    function updateDayNight() {
+        const h = new Date().getHours();
+        document.getElementById('room').classList.toggle('night', h < 6 || h >= 18);
+    }
     
-    // ============ OUTFITS ============
-    function changeOutfit(o){
-        S.outfit=o;
-        document.querySelectorAll('.char .outfit').forEach(x=>x.classList.remove('active'));
-        document.getElementById(o+'-outfit').classList.add('active');
-        document.querySelectorAll('.outfit-opt').forEach(x=>x.classList.remove('active'));
-        document.getElementById('opt-'+o).classList.add('active');
+    // ============ OUTFIT ============
+    function changeOutfit(o) {
+        S.outfit = o;
+        document.querySelectorAll('.outfit-opt').forEach(x => x.classList.remove('active'));
+        document.getElementById('opt-' + o).classList.add('active');
+        showSprite('idle');
         saveS();
     }
     
     // ============ SLEEP ============
-    function toggleSleep(){
-        if(S.outfit!=='pj')return;
-        S.sleeping=!S.sleeping;
-        const c=document.getElementById('char');
-        if(S.sleeping){
-            c.classList.add('sleeping');
+    function toggleSleep() {
+        if (S.outfit !== 'pj') changeOutfit('pj');
+        S.sleeping = !S.sleeping;
+        const c = document.getElementById('char');
+        
+        if (S.sleeping) {
+            c.style.left = '40px';
+            showSprite('sleep');
             document.getElementById('zzz').classList.add('active');
-            document.getElementById('drool').classList.add('active');
-            c.style.left='8%';c.style.bottom='15%';
-        }else{
-            c.classList.remove('sleeping');
+        } else {
+            c.style.left = '350px';
+            showSprite('idle');
             document.getElementById('zzz').classList.remove('active');
-            document.getElementById('drool').classList.remove('active');
-            c.style.left='42%';c.style.bottom='5%';
         }
         saveS();
     }
     
-    // ============ KIMBERLY AI ============
-    function kimIdle(){
-        if(S.sleeping||S.dancing||S.walking)return;
-        const acts=['👋','🧶','📖','💧',null,null],act=acts[Math.floor(Math.random()*acts.length)];
-        if(act){const ind=document.getElementById('activity');ind.textContent=act;ind.classList.add('active');setTimeout(()=>ind.classList.remove('active'),3000);}
-    }
-    function showCoffee(){
-        if(S.sleeping)return;
-        S.drinking=true;document.getElementById('char').classList.add('drinking');
-        setTimeout(()=>{document.getElementById('char').classList.remove('drinking');S.drinking=false;},3000);
-    }
-    function checkTime(){
-        const h=new Date().getHours(),m=new Date().getMinutes();
-        if(h===8&&m===0&&S.sleeping)toggleSleep();
-        if(h===8&&m===0)showCoffee();
-        if(h===12&&m===0)showCoffee();
-        if(h===20&&m===0)showCoffee();
-        if(h===22&&m===0&&S.outfit!=='pj')changeOutfit('pj');
-        if(h===23&&m===0&&!S.sleeping&&S.outfit==='pj')toggleSleep();
-        if(h===8&&m===0&&S.outfit==='pj')changeOutfit('casual');
-    }
-    
-    // ============ PEARL (no random movement, stays by cat bed) ============
-    let pearlInBox=false;
-    function pearlAI(){
-        // Pearl stays in place, just occasionally goes in box
-        if(Math.random() > 0.7 && !pearlInBox){
-            pearlInBox=true;
-            document.getElementById('pearl').classList.add('in-box');
-            setTimeout(()=>{
-                pearlInBox=false;
-                document.getElementById('pearl').classList.remove('in-box');
-            },5000);
+    // ============ KIMBERLY IDLE ============
+    function kimIdle() {
+        if (S.sleeping || S.dancing || S.walking || S.drinking) return;
+        
+        const acts = ['👋', '🧶', '📖', '💭', null, null, null];
+        const act = acts[Math.floor(Math.random() * acts.length)];
+        
+        if (act) {
+            const ind = document.getElementById('activity');
+            ind.textContent = act;
+            ind.classList.add('show');
+            setTimeout(() => ind.classList.remove('show'), 3000);
         }
     }
-    function pearlMeow(){if(Math.random()>0.4){const m=document.getElementById('pearlMeow');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}}
+    
+    function showCoffee() {
+        if (S.sleeping || S.drinking) return;
+        S.drinking = true;
+        document.getElementById('char').classList.add('drinking');
+        showSprite('drink');
+        setTimeout(() => {
+            S.drinking = false;
+            document.getElementById('char').classList.remove('drinking');
+            showSprite('idle');
+        }, 3000);
+    }
+    
+    function checkTime() {
+        const h = new Date().getHours(), m = new Date().getMinutes();
+        if (h === 8 && m === 0) { if (S.sleeping) toggleSleep(); showCoffee(); }
+        if (h === 12 && m === 0) showCoffee();
+        if (h === 20 && m === 0) showCoffee();
+        if (h === 22 && m === 0 && S.outfit !== 'pj') changeOutfit('pj');
+        if (h === 23 && m === 0 && !S.sleeping && S.outfit === 'pj') toggleSleep();
+    }
+    
+    // ============ PEARL ============
+    let pearlInBox = false;
+    function pearlAI() {
+        if (pearlInBox) return;
+        if (Math.random() > 0.65) {
+            pearlInBox = true;
+            document.getElementById('pearl-idle').classList.remove('active');
+            document.getElementById('pearl-box').classList.add('active');
+            setTimeout(() => {
+                pearlInBox = false;
+                document.getElementById('pearl-box').classList.remove('active');
+                document.getElementById('pearl-idle').classList.add('active');
+            }, 5000);
+        }
+    }
+    
+    function pearlMeow() {
+        if (Math.random() > 0.4) {
+            const m = document.getElementById('pearlMeow');
+            m.classList.add('show');
+            setTimeout(() => m.classList.remove('show'), 2500);
+        }
+    }
+
+    function clickPearl() {
+    const m = document.getElementById('pearlMeow');
+    m.classList.add('show');
+    document.getElementById('meowSound').play();
+    setTimeout(() => m.classList.remove('show'), 2500);
+}
     
     // ============ DRAG & DROP ============
-    let draggedItem=null;
-    function setupDrag(){
-        document.querySelectorAll('.item').forEach(item=>{
-            item.addEventListener('dragstart',e=>{draggedItem=item;e.dataTransfer.setData('text',item.id);});
-            item.addEventListener('dragend',()=>draggedItem=null);
-            item.addEventListener('touchstart',e=>{draggedItem=item;item.dataset.sx=e.touches[0].clientX;item.dataset.sy=e.touches[0].clientY;},{passive:true});
-            item.addEventListener('touchmove',e=>{if(!draggedItem)return;const dx=e.touches[0].clientX-parseFloat(draggedItem.dataset.sx),dy=e.touches[0].clientY-parseFloat(draggedItem.dataset.sy);draggedItem.style.transform='translate('+dx+'px,'+dy+'px) scale(1.15)';},{passive:true});
-            item.addEventListener('touchend',e=>{if(!draggedItem)return;const t=e.changedTouches[0],c=document.getElementById('char'),r=c.getBoundingClientRect();if(t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom)giveGift(draggedItem.id.replace('item-',''));draggedItem.style.transform='';draggedItem=null;});
+    let draggedItem = null;
+    function setupDrag() {
+        document.querySelectorAll('.item').forEach(item => {
+            item.addEventListener('dragstart', e => {
+                draggedItem = item;
+                e.dataTransfer.setData('text', item.id);
+            });
+            item.addEventListener('dragend', () => draggedItem = null);
+            
+            // Touch support
+            item.addEventListener('touchstart', e => {
+                draggedItem = item;
+                item.dataset.sx = e.touches[0].clientX;
+                item.dataset.sy = e.touches[0].clientY;
+            }, {passive: true});
+            
+            item.addEventListener('touchmove', e => {
+                if (!draggedItem) return;
+                const dx = e.touches[0].clientX - parseFloat(draggedItem.dataset.sx);
+                const dy = e.touches[0].clientY - parseFloat(draggedItem.dataset.sy);
+                draggedItem.style.transform = `translate(${dx}px,${dy}px) scale(1.2)`;
+            }, {passive: true});
+            
+            item.addEventListener('touchend', e => {
+                if (!draggedItem) return;
+                const t = e.changedTouches[0];
+                const c = document.getElementById('char');
+                const r = c.getBoundingClientRect();
+                if (t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom) {
+                    giveGift(draggedItem.id.replace('item-', ''));
+                }
+                draggedItem.style.transform = '';
+                draggedItem = null;
+            });
         });
-        const c=document.getElementById('char');
-        c.addEventListener('dragover',e=>e.preventDefault());
-        c.addEventListener('drop',e=>{e.preventDefault();if(draggedItem)giveGift(draggedItem.id.replace('item-',''));});
+        
+        const c = document.getElementById('char');
+        c.addEventListener('dragover', e => e.preventDefault());
+        c.addEventListener('drop', e => {
+            e.preventDefault();
+            if (draggedItem) giveGift(draggedItem.id.replace('item-', ''));
+        });
     }
-    function giveGift(type){
-        if(S.sleeping)return;
-        S.happiness=Math.min(100,S.happiness+15);
-        S.hunger=Math.min(100,S.hunger+(type==='cheesecake'?20:5));
-        updateBars();celebrate();spawnHearts();
-        if(S.happiness>=100&&S.hunger>=100)fireworks();
+    
+    function giveGift(type) {
+        if (S.sleeping) return;
+        document.getElementById('giftSound').play();
+        S.happiness = Math.min(100, S.happiness + 15);
+        S.hunger = Math.min(100, S.hunger + (type === 'cheesecake' ? 25 : 5));
+        updateBars();
+        celebrate();
+        spawnHearts();
+        if (S.happiness >= 100 && S.hunger >= 100) fireworks();
         saveS();
     }
-    function updateBars(){
-        document.getElementById('happyBar').style.width=S.happiness+'%';
-        document.getElementById('hungerBar').style.width=S.hunger+'%';
-        const msg=document.getElementById('statMsg');
-        if(S.happiness>=100&&S.hunger>=100){
-            msg.textContent="Kimberly is the happiest girl! 💕";
+    
+    function updateBars() {
+        document.getElementById('happyBar').style.width = S.happiness + '%';
+        document.getElementById('hungerBar').style.width = S.hunger + '%';
+        const msg = document.getElementById('statMsg');
+        if (S.happiness >= 100 && S.hunger >= 100) {
             msg.classList.add('show');
-            setTimeout(()=>msg.classList.remove('show'),4000);
-        }else msg.classList.remove('show');
+            setTimeout(() => msg.classList.remove('show'), 4000);
+        }
     }
-    function celebrate(){const c=document.getElementById('char');S.dancing=true;c.classList.add('dancing');setTimeout(()=>{c.classList.remove('dancing');S.dancing=false;},2000);}
-    function spawnHearts(){const c=document.getElementById('char'),r=c.getBoundingClientRect();for(let i=0;i<6;i++){const h=document.createElement('div');h.className='heart-fx';h.textContent='💕';h.style.left=(r.left+Math.random()*r.width)+'px';h.style.top=r.top+'px';document.body.appendChild(h);setTimeout(()=>h.remove(),1500);}}
-    function fireworks(){const colors=['#ff69b4','#ffd700','#87ceeb','#ff6b6b'];for(let i=0;i<15;i++){setTimeout(()=>{const f=document.createElement('div');f.className='firework';f.style.left=Math.random()*window.innerWidth+'px';f.style.top=Math.random()*(window.innerHeight/2)+'px';f.style.background=colors[Math.floor(Math.random()*colors.length)];document.body.appendChild(f);setTimeout(()=>f.remove(),1000);},i*80);}}
+    
+    function celebrate() {
+        S.dancing = true;
+        document.getElementById('char').classList.add('dancing');
+        showSprite('dance');
+        setTimeout(() => {
+            S.dancing = false;
+            document.getElementById('char').classList.remove('dancing');
+            showSprite('idle');
+        }, 2500);
+    }
+    
+    function spawnHearts() {
+        const c = document.getElementById('char');
+        const r = c.getBoundingClientRect();
+        for (let i = 0; i < 6; i++) {
+            const h = document.createElement('div');
+            h.className = 'heart-fx';
+            h.textContent = ['💕', '💖', '💗', '❤️'][Math.floor(Math.random() * 4)];
+            h.style.left = (r.left + Math.random() * r.width) + 'px';
+            h.style.top = r.top + 'px';
+            document.body.appendChild(h);
+            setTimeout(() => h.remove(), 1500);
+        }
+    }
+    
+    function fireworks() {
+        document.getElementById('fireworkSound').play();
+        const colors = ['#ff69b4', '#ffd700', '#87ceeb', '#ff6b6b', '#98fb98'];
+        for (let i = 0; i < 15; i++) {
+            setTimeout(() => {
+                const f = document.createElement('div');
+                f.className = 'firework';
+                f.style.left = Math.random() * window.innerWidth + 'px';
+                f.style.top = Math.random() * (window.innerHeight * 0.6) + 'px';
+                f.style.background = colors[Math.floor(Math.random() * colors.length)];
+                document.body.appendChild(f);
+                setTimeout(() => f.remove(), 1000);
+            }, i * 100);
+        }
+    }
     
     // ============ MODALS ============
-    function openModal(id){document.getElementById(id).classList.add('active');}
-    function closeModal(id){document.getElementById(id).classList.remove('active');}
-    document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('active');}));
-    function pokePorcupine(){document.getElementById('porcMsg').classList.add('show');spawnHearts();setTimeout(()=>document.getElementById('porcMsg').classList.remove('show'),2500);}
-    function populateNotes(){const g=document.getElementById('notesGrid');g.innerHTML='';loveNotes.forEach((n,i)=>{const c=document.createElement('div');c.className='note-card'+(S.readNotes.includes(i)?' read':'');c.innerHTML='<div class="note-text">"'+n.text+'"</div><div class="note-src">- '+n.source+'</div>';c.onclick=()=>{if(!S.readNotes.includes(i)){S.readNotes.push(i);c.classList.add('read');saveS();}};g.appendChild(c);});}
-    function updateZodiac(){const y=new Date().getFullYear(),a=getZodiac(y),f=dragonFortune[a];document.getElementById('fortuneTitle').textContent=f.e+' DRAGON IN YEAR OF '+f.n.toUpperCase()+' ('+y+')';document.getElementById('fortuneText').textContent=f.f;}
-    function showLucky(){const today=new Date().toDateString();if(S.luckyDate!==today){S.lucky=Math.floor(Math.random()*100)+1;S.luckyDate=today;saveS();}alert('🍀 Lucky: '+S.lucky+' 🍀');}
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    document.querySelectorAll('.modal-bg').forEach(bg => {
+        bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('active'); });
+    });
     
-    // ============ DAYS COUNTER - Fixed ============
-    function updateDays(){
-        const start = new Date(2014, 8, 18); // Sept 18, 2014 (months are 0-indexed)
+    function pokePorcupine() {
+        document.getElementById('porcMsg').classList.add('show');
+        spawnHearts();
+        setTimeout(() => document.getElementById('porcMsg').classList.remove('show'), 3000);
+    }
+    
+    function populateNotes() {
+        const g = document.getElementById('notesGrid');
+        g.innerHTML = '';
+        loveNotes.forEach((n, i) => {
+            const c = document.createElement('div');
+            c.className = 'note-card' + (S.readNotes.includes(i) ? ' read' : '');
+            c.innerHTML = `<div class="note-text">"${n.text}"</div><div class="note-src">— ${n.source}</div>`;
+            c.onclick = () => {
+                if (!S.readNotes.includes(i)) {
+                    S.readNotes.push(i);
+                    c.classList.add('read');
+                    saveS();
+                }
+            };
+            g.appendChild(c);
+        });
+    }
+    
+    function updateZodiac() {
+        const y = new Date().getFullYear();
+        const a = getZodiac(y);
+        const f = dragonFortune[a];
+        document.getElementById('fortuneTitle').textContent = `${f.e} DRAGON IN YEAR OF ${f.n.toUpperCase()} (${y})`;
+        document.getElementById('fortuneText').textContent = f.f;
+    }
+    
+    function showLucky() {
+        const today = new Date().toDateString();
+        if (S.luckyDate !== today) {
+            S.lucky = Math.floor(Math.random() * 100) + 1;
+            S.luckyDate = today;
+            saveS();
+        }
+        alert(`🍀 Today's Lucky Number: ${S.lucky} 🍀`);
+    }
+    
+    // ============ DAYS COUNTER ============
+    function updateDays() {
+        const start = new Date(2014, 8, 18); // Sept 18, 2014
         const now = new Date();
         const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
         document.getElementById('days').textContent = diff.toLocaleString();
     }
     
     // ============ MUSIC ============
-    let player,playerReady=false;
-    function onYouTubeIframeAPIReady(){player=new YT.Player('yt-player',{height:'1',width:'1',videoId:'',playerVars:{autoplay:0},events:{onReady:()=>playerReady=true,onStateChange:e=>{const c=document.getElementById('char');if(e.data===YT.PlayerState.PLAYING){S.dancing=true;c.classList.add('dancing');}else{S.dancing=false;c.classList.remove('dancing');}}}});}
-    function playRandom(){if(playlist.length===0){alert('Add songs to playlist!');return;}const song=playlist[Math.floor(Math.random()*playlist.length)];if(playerReady){player.loadVideoById(song.id);player.playVideo();document.getElementById('nowPlaying').textContent='♪ '+song.name;}}
-    function stopMusic(){if(playerReady){player.stopVideo();S.dancing=false;document.getElementById('char').classList.remove('dancing');document.getElementById('nowPlaying').textContent='';}}
+    let player, playerReady = false;
+    
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('yt-player', {
+            height: '1',
+            width: '1',
+            videoId: '',
+            playerVars: { autoplay: 0 },
+            events: {
+                onReady: () => { playerReady = true; },
+                onStateChange: e => {
+                    const c = document.getElementById('char');
+                    if (e.data === YT.PlayerState.PLAYING && !S.sleeping && !S.walking) {
+                        S.dancing = true;
+                        c.classList.add('dancing');
+                        showSprite('dance');
+                    } else if (e.data === YT.PlayerState.ENDED || e.data === YT.PlayerState.PAUSED) {
+                        S.dancing = false;
+                        c.classList.remove('dancing');
+                        showSprite('idle');
+                    }
+                }
+            }
+        });
+    }
+    
+    function autoPlayMusic() {
+        if (playlist.length === 0 || !playerReady) return;
+        playRandom();
+    }
+    
+    function playRandom() {
+        if (playlist.length === 0) { alert('Add songs to playlist!'); return; }
+        if (!playerReady) { setTimeout(playRandom, 500); return; }
+        
+        const song = playlist[Math.floor(Math.random() * playlist.length)];
+        player.loadVideoById(song.id);
+        player.playVideo();
+        document.getElementById('nowPlaying').textContent = '♪ ' + song.name;
+    }
+    
+    function stopMusic() {
+        if (!playerReady) return;
+        player.stopVideo();
+        S.dancing = false;
+        document.getElementById('char').classList.remove('dancing');
+        showSprite('idle');
+        document.getElementById('nowPlaying').textContent = '';
+    }
     
     // ============ SAVE/LOAD ============
-    function saveS(){localStorage.setItem('kimS',JSON.stringify(S));}
-    function loadS(){const saved=localStorage.getItem('kimS');if(saved){S={...S,...JSON.parse(saved)};changeOutfit(S.outfit);updateBars();}}
+    function saveS() { localStorage.setItem('kimS', JSON.stringify(S)); }
+    function loadS() {
+        const saved = localStorage.getItem('kimS');
+        if (saved) {
+            S = { ...S, ...JSON.parse(saved) };
+            changeOutfit(S.outfit);
+            updateBars();
+        }
+    }
     </script>
     <script src="https://www.youtube.com/iframe_api"></script>
 </body>
